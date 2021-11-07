@@ -1,4 +1,4 @@
-"""Top level module for peopyl_density package."""
+"""Main module."""
 
 import io
 import pickle
