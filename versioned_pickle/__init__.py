@@ -14,6 +14,13 @@ except ImportError:
 
 @dataclass(init=False)
 class EnvironmentMetadata:
+    """Class for managing metadata about the environment used when creating or loading a versioned pickle.
+
+    Parameters
+    ---------
+    packages : dict of package names to their versions
+    py_ver : 3-tuple of the python interpreter version
+    """
     packages: ...
     py_ver: ...
 
@@ -21,6 +28,9 @@ class EnvironmentMetadata:
         self.packages = packages # TODO make dists
         self.py_ver = py_ver
     def to_dict(self):
+        """Get a representation of the metadata as a Python-native dict.
+
+        Used when one doesn't want to import versioned_pickle itself."""
         result = {'environment_metadata':
             {'packages': self.packages, 'py_ver': self.py_ver}}
         return result
@@ -30,11 +40,22 @@ class EnvironmentMetadata:
         return cls(contents['packages'], contents['py_ver'])
     @classmethod
     def from_modules(cls, module_names):
+        """Construct a metadata instance from an iterable of module names.
+
+        The modules need not be top-level; the method handles that and conversion to names of installed distributions.
+        """
         packages = _get_distributions_from_modules(module_names)
         pkg_versions = {pkg: version(pkg) for pkg in packages}
         return cls(pkg_versions, sys.version_info[:3])
 
 def _get_distributions_from_modules(module_names):
+    """Convert an iterable of module names to their distribution names.
+
+    The modules do not have to be top level. They must belong to distributions that are currently installed.
+    Note that distributions or projects are sometimes informally called packages, though they are distinct and
+    Python docs also use package to refer to a folder containing modules. The distribution name
+    as used by installers/PyPI is often but not always the same as the top-level package provided,
+    or a distribution can provide multiple packages."""
     toplevel_pkgs = {mod.split('.')[0] for mod in module_names}
     pkg_to_dists_dict = packages_distributions()
     dists = {dist for pkg in toplevel_pkgs for dist in pkg_to_dists_dict.get(pkg, {})}
@@ -49,16 +70,13 @@ class _VersionedPickler(pickle.Pickler):
         """Custom reducer that wraps the normal pickle operation, recording the modules defining
         the type of each traversed object in the hierarchy. (Note: support for reducer_override was added to pickle in 3.8).
         Modules are stored as a set of strings in self.module_names_found."""
-        # print("found type:", type(obj), type(obj).__module__)
-        self.module_names_found.add(type(obj).__module__)
-        # TODO: currently it seems compiled functions like len or np.array have type=='builtin_function_or_method',
-        # so they aren't detected. can we fix this with obj.__module__?
+        if hasattr(obj, '__module__'): # class objects, functions
+            self.module_names_found.add(obj.__module__)
+        else: # for instance objects
+            self.module_names_found.add(type(obj).__module__)
 
         # continue back to usual reduction
         return NotImplemented
-    def dump(self, obj):
-        f = io.BytesIO()
-        super().dump(obj)
 
 def dump(obj, file, package_scope='object'):
     f_temp = io.BytesIO()
