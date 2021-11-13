@@ -18,23 +18,25 @@ class EnvironmentMetadata:
 
     Parameters
     ---------
-    packages : dict of package names to their versions
-    py_ver : 3-tuple of the python interpreter version
+    package_scope
+    object_modules
     """
     packages: ...
     py_ver: ...
     package_scope: ...
-    def __init__(self, package_scope='object', object_modules=None)
+    def __init__(self, package_scope='object', object_modules=None):
+        self.package_scope = package_scope
         if package_scope == 'object':
             if object_modules is None:
-                raise UserError('if package_scope is "object" then object_mdules must be given')
+                raise TypeError('if package_scope is "object" then object_modules must be given')
             package_names = _get_distributions_from_modules(object_modules)
             self.packages = {pkg: version(pkg) for pkg in package_names}
         elif package_scope == 'loaded':
             package_names = _get_distributions_from_modules(sys.modules)
             self.packages = {pkg: version(pkg) for pkg in package_names}
         elif package_scope == 'installed':
-            self.packages = packages_distributions()
+            package_names = {dist for dists in packages_distributions().values() for dist in dists}
+            self.packages = {pkg: version(pkg) for pkg in package_names}
 
         self.py_ver = sys.version_info[:3]
 
@@ -50,7 +52,7 @@ class EnvironmentMetadata:
         contents = metadata['environment_metadata']
         return cls(contents['packages'], contents['py_ver'])
     def validate(self, loaded):
-
+        pass #TODO
 
 def _get_distributions_from_modules(module_names):
     """Convert an iterable of module names to their installed distribution names.
