@@ -13,8 +13,8 @@ setuptools.setup(
     name="versioned-pickle", # Replace with your own username
     # SCM stuff is added here as well, for compatibility with tools that don't yet use the info
     # from pyproject.toml (e.g. setup.py commands)
-    use_scm_version={'local_scheme': 'dirty-tag'},
-    setup_requires=['setuptools_scm'],
+    # use_scm_version={'local_scheme': 'dirty-tag'},
+    # setup_requires=['setuptools_scm'],
     packages=setuptools.find_packages(),
     author="Asaf Reich",
     author_email="asafspades@gmail.com",
@@ -22,6 +22,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires = ['importlib-metadata>=4.4;python_version<"3.10"'],
+    extras_require = {"dev": ["pytest","requests"]},
     include_package_data=True,
     url="https://github.com/a-reich/versioned_pickle",
     license='MIT License',

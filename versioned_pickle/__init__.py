@@ -37,6 +37,8 @@ class EnvironmentMetadata:
         elif package_scope == 'installed':
             package_names = {dist for dists in packages_distributions().values() for dist in dists}
             self.packages = {pkg: version(pkg) for pkg in package_names}
+        else:
+            raise ValueError('package_scope must be "object", "loaded", or "installed"')
 
         self.py_ver = sys.version_info[:3]
 
@@ -74,7 +76,7 @@ class _IntrospectionPickler(pickle.Pickler):
     module_names_found attribute stores the detected modules."""
     def __init__(self, *args, **kwargs):
         self.module_names_found = set()
-        super().__init__(file, *args, **kwargs)
+        super().__init__(*args, **kwargs)
     def reducer_override(self, obj):
         """Custom reducer that wraps the normal pickle operation, recording the modules defining
         the type of each traversed object in the hierarchy.
