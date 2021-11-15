@@ -32,7 +32,7 @@ class EnvironmentMetadata:
             package_names = _get_distributions_from_modules(object_modules)
             self.packages = {pkg: version(pkg) for pkg in package_names}
         elif package_scope == 'loaded':
-            package_names = _get_distributions_from_modules(sys.modules)
+            package_names = _get_distributions_from_modules(sys.modules.copy())
             self.packages = {pkg: version(pkg) for pkg in package_names}
         elif package_scope == 'installed':
             package_names = {dist for dists in packages_distributions().values() for dist in dists}
@@ -51,7 +51,7 @@ class EnvironmentMetadata:
     def from_dict(cls, metadata):
         contents = metadata['environment_metadata']
         return cls(contents['packages'], contents['py_ver'])
-    def validate(self, loaded):
+    def validate(self, loaded_env):
         pass #TODO
 
 def _get_distributions_from_modules(module_names):

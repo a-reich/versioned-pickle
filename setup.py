@@ -22,7 +22,8 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires = ['importlib-metadata>=4.4;python_version<"3.10"'],
-    url="https://github.com/a-reich/vesrioned_pickle",
+    include_package_data=True,
+    url="https://github.com/a-reich/versioned_pickle",
     license='MIT License',
     classifiers=[
         "Programming Language :: Python :: 3",
