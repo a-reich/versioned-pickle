@@ -5,12 +5,13 @@ import io
 import pickle
 import sys
 from dataclasses import dataclass
+import warnings
 
 try:
-    from importlib.metadata import packages_distributions, version
+    from importlib.metadata import packages_distributions, version, PackageNotFoundError
 except ImportError:
     # needed function was added to the stdlib module in python 3.10, otherwise fall back to 3rd-party version
-    from importlib_metadata import packages_distributions, version
+    from importlib_metadata import packages_distributions, version, PackageNotFoundError
 
 @dataclass
 class EnvironmentMetadata:
@@ -54,7 +55,22 @@ class EnvironmentMetadata:
         contents = metadata['environment_metadata']
         return cls(contents['packages'], contents['py_ver'])
     def validate(self, loaded_env):
-        pass #TODO
+        compare = {pkg: (self.packages[pkg], loaded_env.packages.get(pkg)}
+            for pkg in self.packages}
+        compare = {pkg: versions for pkg, versions in compare.items() if versions[0] != versions[1]}
+        if compare:
+            msg = 'Packages from pickling and unpickling environment do not match.'
+            return PackageMismatchWarning('Packages from pickling and unpickling environment do not match.')
+        else:
+            return None
+
+class PackageMismatchWarning(Warning):
+    def __init__(self, msg, mismatches=None):
+        self.msg = msg
+        self.mismatches = mismatches
+    def __str__(self):
+        return f'{self.msg}\nDetails of mismatched pickled, loaded versions:\n' + '\n'.join(
+            [f'{pkg}: {versions}' for pkg, versions in self.mismatches.items()])
 
 def _get_distributions_from_modules(module_names):
     """Convert an iterable of module names to their installed distribution names.
