@@ -1,0 +1,42 @@
+name: vpickle
+channels:
+  - defaults
+dependencies:
+  - atomicwrites=1.4.0
+  - attrs=21.2.0
+  - brotlipy=0.7.0
+  - ca-certificates=2021.10.26
+  - certifi=2021.10.8
+  - cffi=1.15.0
+  - charset-normalizer=2.0.4
+  - colorama=0.4.4
+  - coverage=5.5
+  - cryptography=36.0.0
+  - idna=3.3
+  - iniconfig=1.1.1
+  - more-itertools=8.12.0
+  - openssl=1.1.1l
+  - packaging=21.3
+  - pip=21.2.4
+  - pluggy=0.13.1
+  - py=1.10.0
+  - pycparser=2.21
+  - pyopenssl=21.0.0
+  - pyparsing=3.0.4
+  - pysocks=1.7.1
+  - pytest=6.2.4
+  - pytest-cov=3.0.0
+  - python=3.9.7
+  - requests=2.26.0
+  - setuptools=58.0.4
+  - six=1.16.0
+  - sqlite=3.36.0
+  - toml=0.10.2
+  - tzdata=2021e
+  - urllib3=1.26.7
+  - vc=14.2
+  - vs2015_runtime=14.27.29016
+  - wheel=0.37.0
+  - win_inet_pton=1.1.0
+  - wincertstore=0.2
+prefix: C:\Users\asafs\Miniconda3\envs\vpickle
