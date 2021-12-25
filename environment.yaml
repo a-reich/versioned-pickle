@@ -13,6 +13,8 @@ dependencies:
   - coverage=5.5
   - cryptography=36.0.0
   - idna=3.3
+  - importlib-metadata=4.8.2
+  - importlib_metadata=4.8.2
   - iniconfig=1.1.1
   - more-itertools=8.12.0
   - openssl=1.1.1l
@@ -39,4 +41,5 @@ dependencies:
   - wheel=0.37.0
   - win_inet_pton=1.1.0
   - wincertstore=0.2
+  - zipp=3.6.0
 prefix: C:\Users\asafs\Miniconda3\envs\vpickle

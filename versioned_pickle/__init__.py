@@ -33,9 +33,13 @@ class EnvironmentMetadata:
             package_names = _get_distributions_from_modules(object_modules)
             self.packages = {pkg: version(pkg) for pkg in package_names}
         elif package_scope == 'loaded':
+            if object_modules is not None:
+                raise TypeError('if package_scope is not "object" then object_modules must be None')
             package_names = _get_distributions_from_modules(sys.modules.copy())
             self.packages = {pkg: version(pkg) for pkg in package_names}
         elif package_scope == 'installed':
+            if object_modules is not None:
+                raise TypeError('if package_scope is not "object" then object_modules must be None')
             package_names = {dist for dists in packages_distributions().values() for dist in dists}
             self.packages = {pkg: version(pkg) for pkg in package_names}
         else:
@@ -53,19 +57,24 @@ class EnvironmentMetadata:
     @classmethod
     def from_dict(cls, metadata):
         contents = metadata['environment_metadata']
-        return cls(contents['packages'], contents['py_ver'])
+        inst = cls(package_scope='installed') # a dummy instance with values we don't care about
+        inst.packages = contents['packages']
+        inst.py_ver = contents['py_ver']
+        inst.package_scope = contents['package_scope']
+        # TODO: add checks for valid fields? break out check into a func used in __init__ & here?
+        return inst
     def validate(self, loaded_env):
-        compare = {pkg: (self.packages[pkg], loaded_env.packages.get(pkg)}
+        compare = {pkg: (self.packages[pkg], loaded_env.packages.get(pkg))
             for pkg in self.packages}
         compare = {pkg: versions for pkg, versions in compare.items() if versions[0] != versions[1]}
         if compare:
             msg = 'Packages from pickling and unpickling environment do not match.'
-            return PackageMismatchWarning('Packages from pickling and unpickling environment do not match.')
+            return PackageMismatchWarning(msg, compare)
         else:
             return None
 
 class PackageMismatchWarning(Warning):
-    def __init__(self, msg, mismatches=None):
+    def __init__(self, msg, mismatches):
         self.msg = msg
         self.mismatches = mismatches
     def __str__(self):
@@ -76,7 +85,8 @@ def _get_distributions_from_modules(module_names):
     """Convert an iterable of module names to their installed distribution names.
 
     The modules do not have to be top level. If they don't belong to distributions that are
-    currently installed (e.g. because they are stdlib modules or manually imported through sys.path) they are ignored.
+    currently installed (e.g. because they are stdlib modules or manually imported through sys.path),
+    they are silently ignored.
     Note that distributions or projects are sometimes informally called packages, though they are distinct and
     Python docs also use package to refer to a folder containing modules. The distribution name
     as used by installers/PyPI is often but not always the same as the top-level package provided,
@@ -112,20 +122,25 @@ def dump(obj, file, package_scope='object'):
     pickler.dump(obj)
     pickled_obj = f_temp.getvalue()
     f_temp.close()
-    meta_info = EnvironmentMetadata.from_modules(pickler.module_names_found)
+    meta_info = EnvironmentMetadata(object_modules=pickler.module_names_found)
     pickle.dump(meta_info.to_dict(), file)
     file.write(pickled_obj)
 
 def load(file, return_meta=False):
     header_dict = pickle.load(file)
-    meta = EnvironmentMetadata.from_dict(header_dict)
+    pickled_meta = EnvironmentMetadata.from_dict(header_dict)
     val = pickle.load(file)
-    return (val, meta) if return_meta else val
+    loaded_meta = EnvironmentMetadata('installed')
+    validation = pickled_meta.validate(loaded_meta)
+    if isinstance(validation, PackageMismatchWarning):
+        warnings.warn(validation)
+    return (val, pickled_meta) if return_meta else val
 
 def dumps(obj, package_scope='object'):
     f = io.BytesIO()
     dump(obj, f)
     return f.getvalue()
-def loads(f, return_meta=False):
-    obj = load(obj, f)
+def loads(data, return_meta=False):
+    f = io.BytesIO(data)
+    obj = load(f, return_meta)
     return obj
