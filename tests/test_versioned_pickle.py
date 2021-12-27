@@ -119,3 +119,15 @@ def test_metadata_validate():
     meta_loaded = copy.deepcopy(meta_pickled)
     del meta_loaded.packages['testing-pkg']
     assert isinstance(meta_pickled.validate(meta_loaded), vpickle.PackageMismatchWarning)
+
+def test_dump(mocker):
+    # need an object whose parts can be compared reasonably for equality
+    obj_for_roundtrip = [MyCls('foo'), requests.Request]
+    dumped_bytes = vpickle.dumps(obj_for_roundtrip)
+    loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
+    assert obj_for_roundtrip == loaded_copy
+    from versioned_pickle import version as local_version_import
+    mocker.patch('versioned_pickle.version', new=lambda x: 'dummy' if x=='requests' else local_version_import(x))
+    with pytest.warns(vpickle.PackageMismatchWarning,
+        match='Packages from pickling and unpickling environment do not match') as record:
+        loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
