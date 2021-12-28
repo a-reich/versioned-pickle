@@ -50,48 +50,48 @@ def test_pickler(sample_object):
 class TestEnvMetadata:
     """Test instantiation of EnvironmentMetadata"""
     def test_env_metadata_loaded(self, import_module):
-        meta = vpickle.EnvironmentMetadata(package_scope='loaded')
+        meta = vpickle.EnvironmentMetadata.from_scope(package_scope='loaded')
         assert 'requests' in meta.packages
 
     def test_env_metadata_calls(self):
-        metadata_inst = vpickle.EnvironmentMetadata(object_modules=['requests.models'])
+        metadata_inst = vpickle.EnvironmentMetadata.from_scope(object_modules=['requests.models'])
         assert metadata_inst.packages == {'requests': version('requests')}
         assert metadata_inst.py_ver == tuple(sys.version_info[:3])
 
         with patch('versioned_pickle.packages_distributions') as mock:
-            metadata_inst = vpickle.EnvironmentMetadata(package_scope='installed')
+            metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='installed')
             mock.assert_called()
             assert mock.mock_calls == call().values().__iter__().call_list()
         with patch('versioned_pickle.packages_distributions', return_value={'pkg1':['dist1'],'pkg2':['dist2']}):
             with patch('versioned_pickle.version') as mock:
-                metadata_inst = vpickle.EnvironmentMetadata(package_scope='installed')
+                metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='installed')
                 mock.assert_has_calls([call('dist1'), call('dist2')], any_order=True)
         with patch('versioned_pickle._get_distributions_from_modules') as mock_dists:
-                metadata_inst = vpickle.EnvironmentMetadata(package_scope='object', object_modules=['pkg1'])
+                metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='object', object_modules=['pkg1'])
                 mock_dists.assert_called_with(['pkg1'])
 
     def test_metadata_return_installed(self, mocker):
         # using the mocker fixture from pytest-mock because the unittest @patch decorator doesn't play well with pytest
         mocker.patch('versioned_pickle.packages_distributions', return_value={'pkg1': ['dist1'], 'pkg2': ['dist2']})
         mocker.patch('versioned_pickle.version', new=lambda x: {'dist1':'1','dist2':'2'}[x])
-        metadata_inst = vpickle.EnvironmentMetadata(package_scope='installed')
+        metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='installed')
         assert metadata_inst.packages == {'dist1':'1','dist2':'2'}
 
     def test_metadata_return_loaded(self, mocker):
         mocker.patch('versioned_pickle.packages_distributions', return_value={'pkg1': ['dist1'], 'pkg2': ['dist2']})
         mocker.patch('versioned_pickle.version', new=lambda x: {'dist1':'1','dist2':'2'}[x])
         mocker.patch('sys.modules', new={'pkg1': None})
-        metadata_inst = vpickle.EnvironmentMetadata(package_scope='loaded')
+        metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='loaded')
         assert metadata_inst.packages == {'dist1':'1'}
 
     def test_metadata_return_object(self, mocker):
         mocker.patch('versioned_pickle.packages_distributions', return_value={'pkg1': ['dist1'], 'pkg2': ['dist2']})
         mocker.patch('versioned_pickle.version', new=lambda x: {'dist1':'1','dist2':'2'}[x])
-        metadata_inst = vpickle.EnvironmentMetadata(package_scope='object', object_modules=['pkg1'])
+        metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='object', object_modules=['pkg1'])
         assert metadata_inst.packages == {'dist1': '1'}
 
 def test_metadata_tofrom_dict(sample_object):
-    meta = vpickle.EnvironmentMetadata(object_modules=sample_object[1])
+    meta = vpickle.EnvironmentMetadata.from_scope(object_modules=sample_object[1])
     assert vpickle.EnvironmentMetadata.from_dict(meta.to_dict()) == meta
 
     sample_dict = {'environment_metadata':{'packages':{
@@ -100,10 +100,8 @@ def test_metadata_tofrom_dict(sample_object):
     assert vpickle.EnvironmentMetadata.from_dict(sample_dict).to_dict() == sample_dict
 
 def test_metadata_validate():
-    sample = {'environment_metadata':{'packages':{
-        'testing-pkg': '1.0.0'},
-        'py_ver': (3,9,0), 'package_scope': 'object'}}
-    meta_pickled = vpickle.EnvironmentMetadata.from_dict(sample)
+    meta_pickled = vpickle.EnvironmentMetadata(
+        packages={'testing-pkg': '1.0.0'}, py_ver=(3,9,0), package_scope='object')
     meta_loaded = copy.deepcopy(meta_pickled)
     assert meta_pickled.validate(meta_loaded) is None
     # we don't check py_ver or scope or extra pkgs in loading env
@@ -131,3 +129,4 @@ def test_dump(mocker):
     with pytest.warns(vpickle.PackageMismatchWarning,
         match='Packages from pickling and unpickling environment do not match') as record:
         loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
+        assert obj_for_roundtrip == loaded_copy

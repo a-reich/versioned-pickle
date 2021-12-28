@@ -25,42 +25,42 @@ class EnvironmentMetadata:
     packages: ...
     py_ver: ...
     package_scope: ...
-    def __init__(self, package_scope='object', object_modules=None):
-        self.package_scope = package_scope
+
+    @classmethod
+    def from_scope(cls, package_scope='object', object_modules=None):
         if package_scope == 'object':
             if object_modules is None:
                 raise TypeError('if package_scope is "object" then object_modules must be given')
             package_names = _get_distributions_from_modules(object_modules)
-            self.packages = {pkg: version(pkg) for pkg in package_names}
+            packages = {pkg: version(pkg) for pkg in package_names}
         elif package_scope == 'loaded':
             if object_modules is not None:
                 raise TypeError('if package_scope is not "object" then object_modules must be None')
             package_names = _get_distributions_from_modules(sys.modules.copy())
-            self.packages = {pkg: version(pkg) for pkg in package_names}
+            packages = {pkg: version(pkg) for pkg in package_names}
         elif package_scope == 'installed':
             if object_modules is not None:
                 raise TypeError('if package_scope is not "object" then object_modules must be None')
             package_names = {dist for dists in packages_distributions().values() for dist in dists}
-            self.packages = {pkg: version(pkg) for pkg in package_names}
+            packages = {pkg: version(pkg) for pkg in package_names}
         else:
             raise ValueError('package_scope must be "object", "loaded", or "installed"')
 
-        self.py_ver = sys.version_info[:3]
+        return cls(packages=packages, py_ver=sys.version_info[:3], package_scope=package_scope)
 
     def to_dict(self):
         """Get a representation of the metadata as a Python-native dict.
 
-        Used when one doesn't want to import versioned_pickle itself."""
+        Used when one doesn't want to have import versioned_pickle itself, such as in the header created
+        for pickle files."""
         result = {'environment_metadata':{
             'packages': self.packages, 'py_ver': self.py_ver, 'package_scope': self.package_scope}}
         return result
     @classmethod
     def from_dict(cls, metadata):
+        """Inverse of to_dict - create an instance from a native dict in the pickle-header format."""
         contents = metadata['environment_metadata']
-        inst = cls(package_scope='installed') # a dummy instance with values we don't care about
-        inst.packages = contents['packages']
-        inst.py_ver = contents['py_ver']
-        inst.package_scope = contents['package_scope']
+        inst = cls(**contents)
         # TODO: add checks for valid fields? break out check into a func used in __init__ & here?
         return inst
     def validate(self, loaded_env):
@@ -122,7 +122,7 @@ def dump(obj, file, package_scope='object'):
     pickler.dump(obj)
     pickled_obj = f_temp.getvalue()
     f_temp.close()
-    meta_info = EnvironmentMetadata(object_modules=pickler.module_names_found)
+    meta_info = EnvironmentMetadata.from_scope(object_modules=pickler.module_names_found)
     pickle.dump(meta_info.to_dict(), file)
     file.write(pickled_obj)
 
@@ -130,7 +130,7 @@ def load(file, return_meta=False):
     header_dict = pickle.load(file)
     pickled_meta = EnvironmentMetadata.from_dict(header_dict)
     val = pickle.load(file)
-    loaded_meta = EnvironmentMetadata('installed')
+    loaded_meta = EnvironmentMetadata.from_scope('installed')
     validation = pickled_meta.validate(loaded_meta)
     if isinstance(validation, PackageMismatchWarning):
         warnings.warn(validation)

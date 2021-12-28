@@ -30,7 +30,7 @@ def with_testpkg_installed():
 
 
 def test_installed_not_imported(with_testpkg_installed):
-    meta_inst = vpickle.EnvironmentMetadata(package_scope='installed')
+    meta_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='installed')
     assert 'testing-pkg' in meta_inst.packages
-    meta_load = vpickle.EnvironmentMetadata(package_scope='loaded')
+    meta_load = vpickle.EnvironmentMetadata.from_scope(package_scope='loaded')
     assert 'testing-pkg' not in meta_load.packages
