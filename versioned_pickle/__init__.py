@@ -13,21 +13,27 @@ except ImportError:
     # needed function was added to the stdlib module in python 3.10, otherwise fall back to 3rd-party version
     from importlib_metadata import packages_distributions, version, PackageNotFoundError
 
-@dataclass
+@dataclass(frozen=True)
 class EnvironmentMetadata:
     """Class for managing metadata about the environment used when creating or loading a versioned pickle.
 
-    Parameters
+    Attributes
     ---------
+    packages
+    py_ver
     package_scope
-    object_modules
     """
     packages: ...
     py_ver: ...
     package_scope: ...
 
+    # TODO: add checks for valid field values? in a optional custom method or an auto-called __post_init__?
     @classmethod
     def from_scope(cls, package_scope='object', object_modules=None):
+        """Construct an EnvironmentMetadata based on the type of scope for which packages to include. The typical way
+        to construct instances.
+        The package_scope can be "object" (the specific modules needed for an object, in which case module names
+        must be specified in object_modules, or "loaded", or "installed"."""
         if package_scope == 'object':
             if object_modules is None:
                 raise TypeError('if package_scope is "object" then object_modules must be given')
@@ -61,7 +67,6 @@ class EnvironmentMetadata:
         """Inverse of to_dict - create an instance from a native dict in the pickle-header format."""
         contents = metadata['environment_metadata']
         inst = cls(**contents)
-        # TODO: add checks for valid fields? break out check into a func used in __init__ & here?
         return inst
     def validate(self, loaded_env):
         compare = {pkg: (self.packages[pkg], loaded_env.packages.get(pkg))
