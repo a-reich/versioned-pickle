@@ -4,7 +4,7 @@ import os
 import io
 import sys
 import subprocess
-from dataclasses import dataclass
+import dataclasses
 
 import pytest
 from pytest import fixture
@@ -20,7 +20,7 @@ from unittest.mock import Mock, patch, call
 import unittest.mock as mock
 import copy
 
-@dataclass
+@dataclasses.dataclass
 class MyCls:
     x: ... = None
 
@@ -105,17 +105,15 @@ def test_metadata_validate():
     meta_loaded = copy.deepcopy(meta_pickled)
     assert meta_pickled.validate(meta_loaded) is None
     # we don't check py_ver or scope or extra pkgs in loading env
-    meta_loaded = copy.deepcopy(meta_pickled)
-    meta_loaded.package_scope = 'loaded'
-    meta_loaded.py_ver = 'dummy'
-    meta_loaded.packages['extra-pkg'] = '1'
+    meta_loaded = dataclasses.replace(meta_pickled,
+        package_scope='loaded', py_ver = 'dummy', packages=meta_pickled.packages | {'extra-pkg':'1'})
     # we fail on different versions or missing pkg from pickled env
     assert meta_pickled.validate(meta_loaded) is None
-    meta_loaded = copy.deepcopy(meta_pickled)
-    meta_loaded.packages['testing-pkg'] = '1.0.1'
+    meta_loaded = dataclasses.replace(meta_pickled,
+        packages=meta_pickled.packages | {'testing-pkg':'1.0.1'})
     assert isinstance(meta_pickled.validate(meta_loaded), vpickle.PackageMismatchWarning)
-    meta_loaded = copy.deepcopy(meta_pickled)
-    del meta_loaded.packages['testing-pkg']
+    meta_loaded = dataclasses.replace(meta_pickled,
+        packages={k:v for k,v in meta_pickled.packages.items() if k!='testing-pkg'})
     assert isinstance(meta_pickled.validate(meta_loaded), vpickle.PackageMismatchWarning)
 
 def test_dump(mocker):
