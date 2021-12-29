@@ -18,11 +18,11 @@ import unittest.mock as mock
 @fixture
 def with_testpkg_installed():
     subprocess.run([sys.executable] + "-m pip install tests/testing_pkg".split(), check=True)
-    assert vpickle.version("testing-pkg") == "1.0.0"
+    assert vpickle.get_version("testing-pkg") == "1.0.0"
     yield
     subprocess.run([sys.executable] + "-m pip uninstall -y testing-pkg".split(), check=True)
     try:
-        vpickle.version("testing-pkg")
+        vpickle.get_version("testing-pkg")
     except vpickle.PackageNotFoundError:
         pass
     else:

@@ -10,10 +10,10 @@ import pytest
 from pytest import fixture
 import requests
 try:
-    from importlib.metadata import packages_distributions, version
+    from importlib.metadata import packages_distributions, version as get_version
 except ImportError:
     # needed function was added to the stdlib module in python 3.10, otherwise fall back to 3rd-party version
-    from importlib_metadata import packages_distributions, version
+    from importlib_metadata import packages_distributions, version as get_version
 
 import versioned_pickle as vpickle
 from unittest.mock import Mock, patch, call
@@ -55,7 +55,7 @@ class TestEnvMetadata:
 
     def test_env_metadata_calls(self):
         metadata_inst = vpickle.EnvironmentMetadata.from_scope(object_modules=['requests.models'])
-        assert metadata_inst.packages == {'requests': version('requests')}
+        assert metadata_inst.packages == {'requests': get_version('requests')}
         assert metadata_inst.py_ver == tuple(sys.version_info[:3])
 
         with patch('versioned_pickle.packages_distributions') as mock:
@@ -92,29 +92,29 @@ class TestEnvMetadata:
 
 def test_metadata_tofrom_dict(sample_object):
     meta = vpickle.EnvironmentMetadata.from_scope(object_modules=sample_object[1])
-    assert vpickle.EnvironmentMetadata.from_dict(meta.to_dict()) == meta
+    assert vpickle.EnvironmentMetadata.from_header_dict(meta.to_header_dict()) == meta
 
     sample_dict = {'environment_metadata':{'packages':{
         'testing-pkg': '1.0.0'},
         'py_ver': (3,9,0), 'package_scope': 'object'}}
-    assert vpickle.EnvironmentMetadata.from_dict(sample_dict).to_dict() == sample_dict
+    assert vpickle.EnvironmentMetadata.from_header_dict(sample_dict).to_header_dict() == sample_dict
 
 def test_metadata_validate():
     meta_pickled = vpickle.EnvironmentMetadata(
         packages={'testing-pkg': '1.0.0'}, py_ver=(3,9,0), package_scope='object')
     meta_loaded = copy.deepcopy(meta_pickled)
-    assert meta_pickled.validate(meta_loaded) is None
+    assert meta_pickled.validate_against(meta_loaded) is None
     # we don't check py_ver or scope or extra pkgs in loading env
     meta_loaded = dataclasses.replace(meta_pickled,
         package_scope='loaded', py_ver = 'dummy', packages=meta_pickled.packages | {'extra-pkg':'1'})
     # we fail on different versions or missing pkg from pickled env
-    assert meta_pickled.validate(meta_loaded) is None
+    assert meta_pickled.validate_against(meta_loaded) is None
     meta_loaded = dataclasses.replace(meta_pickled,
         packages=meta_pickled.packages | {'testing-pkg':'1.0.1'})
-    assert isinstance(meta_pickled.validate(meta_loaded), vpickle.PackageMismatchWarning)
+    assert isinstance(meta_pickled.validate_against(meta_loaded), vpickle.PackageMismatchWarning)
     meta_loaded = dataclasses.replace(meta_pickled,
         packages={k:v for k,v in meta_pickled.packages.items() if k!='testing-pkg'})
-    assert isinstance(meta_pickled.validate(meta_loaded), vpickle.PackageMismatchWarning)
+    assert isinstance(meta_pickled.validate_against(meta_loaded), vpickle.PackageMismatchWarning)
 
 def test_dump(mocker):
     # need an object whose parts can be compared reasonably for equality
