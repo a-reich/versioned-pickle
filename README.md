@@ -54,8 +54,9 @@ outputted info to update your environment in whatever way you choose. This is be
 ecosystem and how to specify then recreate an environment has many nuances and several different tools
 are popular (pip, conda, pipenv, poetry, etc.). 
 # Installation
-To install latest commit from Github:
-```pip install git+https://github.com/a-reich/versioned-pickle.git```
+To install from source the latest commit from Github: `pip install git+https://github.com/a-reich/versioned-pickle.git`  
+To install a specific built wheel from GH:  
+` pip install versioned_pickle @ https://github.com/a-reich/versioned-pickle/releases/download/v0.2.1/versioned_pickle-0.2.1-py3-none-any.whl`
 # Usage
 `versioned-pickle` provides a drop-in replacement for the standard library `pickle` module,
 namely `dump/dumps` and `load/loads` functions. For example:
