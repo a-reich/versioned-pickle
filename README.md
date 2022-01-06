@@ -74,9 +74,11 @@ with open('myobj.pkl', 'rb') as f:
 # Details of mismatched pickled, loaded versions:
 # pandas: ('1.3.0', '1.3.4')
 ```
-Three different methods ('scopes') for determining which packages to include are supported:
+Three different methods ('scopes') are supported for determining which packages (or more properly, 'distributions')
+to include, in increasing order of strictness:
 "object" - the specific modules encountered when pickling the object, "loaded" - any module that
 has currently been imported, or "installed" - all installed distributions.
-(The Python version is also recorded but not used in validation by default). 
-
+(The Python version is also recorded but not used in validation by default).
+Environment metadata is obtained using `importlib.metadata`.
+ 
 For detailed documentation see the docstrings.
