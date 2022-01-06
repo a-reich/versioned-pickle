@@ -1,4 +1,16 @@
-"""Main module."""
+"""Main module of versioned-pickle.
+
+The main API consists of these functions:
+dump
+dumps
+load
+loads
+
+These can be used as a nearly drop-in replacement for the corresponding functions from the stdlib pickle module.
+Only these are needed for normal use. Additional public objects
+(including EnvironmentMetadata and PackageMismatchWarning) are exposed only for potentially customizing the treatment
+of environment metadata or handling of mismatches.
+"""
 from __future__ import annotations
 
 import io
@@ -11,7 +23,7 @@ try:
     from importlib.metadata import packages_distributions, version as get_version, PackageNotFoundError
 except ImportError:
     # needed function was added to the stdlib module in python 3.10, otherwise fall back to 3rd-party version
-    from importlib_metadata import packages_distributions, get_version, PackageNotFoundError
+    from importlib_metadata import packages_distributions, version as get_version, PackageNotFoundError
 
 @dataclass(frozen=True)
 class EnvironmentMetadata:
@@ -166,7 +178,7 @@ def dump(obj, file, package_scope='object'):
     package_scope: optional str {'object', 'loaded', 'installed'},
         How to determine which packages to include in metadata.
         "object": the specific modules needed to pickle the object,
-        or "loaded": any module that has currently been imported,
+        or "loaded": any module that has currently been imported (regardless of where),
         or "installed": all installed distributions.
     """
     f_temp = io.BytesIO()

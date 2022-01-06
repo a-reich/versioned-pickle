@@ -63,7 +63,7 @@ class TestEnvMetadata:
             mock.assert_called()
             assert mock.mock_calls == call().values().__iter__().call_list()
         with patch('versioned_pickle.packages_distributions', return_value={'pkg1':['dist1'],'pkg2':['dist2']}):
-            with patch('versioned_pickle.version') as mock:
+            with patch('versioned_pickle.get_version') as mock:
                 metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='installed')
                 mock.assert_has_calls([call('dist1'), call('dist2')], any_order=True)
         with patch('versioned_pickle._get_distributions_from_modules') as mock_dists:
@@ -73,20 +73,20 @@ class TestEnvMetadata:
     def test_metadata_return_installed(self, mocker):
         # using the mocker fixture from pytest-mock because the unittest @patch decorator doesn't play well with pytest
         mocker.patch('versioned_pickle.packages_distributions', return_value={'pkg1': ['dist1'], 'pkg2': ['dist2']})
-        mocker.patch('versioned_pickle.version', new=lambda x: {'dist1':'1','dist2':'2'}[x])
+        mocker.patch('versioned_pickle.get_version', new=lambda x: {'dist1':'1','dist2':'2'}[x])
         metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='installed')
         assert metadata_inst.packages == {'dist1':'1','dist2':'2'}
 
     def test_metadata_return_loaded(self, mocker):
         mocker.patch('versioned_pickle.packages_distributions', return_value={'pkg1': ['dist1'], 'pkg2': ['dist2']})
-        mocker.patch('versioned_pickle.version', new=lambda x: {'dist1':'1','dist2':'2'}[x])
+        mocker.patch('versioned_pickle.get_version', new=lambda x: {'dist1':'1','dist2':'2'}[x])
         mocker.patch('sys.modules', new={'pkg1': None})
         metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='loaded')
         assert metadata_inst.packages == {'dist1':'1'}
 
     def test_metadata_return_object(self, mocker):
         mocker.patch('versioned_pickle.packages_distributions', return_value={'pkg1': ['dist1'], 'pkg2': ['dist2']})
-        mocker.patch('versioned_pickle.version', new=lambda x: {'dist1':'1','dist2':'2'}[x])
+        mocker.patch('versioned_pickle.get_version', new=lambda x: {'dist1':'1','dist2':'2'}[x])
         metadata_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='object', object_modules=['pkg1'])
         assert metadata_inst.packages == {'dist1': '1'}
 
@@ -122,8 +122,8 @@ def test_dump(mocker):
     dumped_bytes = vpickle.dumps(obj_for_roundtrip)
     loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
     assert obj_for_roundtrip == loaded_copy
-    from versioned_pickle import version as local_version_import
-    mocker.patch('versioned_pickle.version', new=lambda x: 'dummy' if x=='requests' else local_version_import(x))
+    from versioned_pickle import get_version as local_version_import
+    mocker.patch('versioned_pickle.get_version', new=lambda x: 'dummy' if x=='requests' else local_version_import(x))
     with pytest.warns(vpickle.PackageMismatchWarning,
         match='Packages from pickling and unpickling environment do not match') as record:
         loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
