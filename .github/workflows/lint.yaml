@@ -10,7 +10,7 @@ jobs:
         uses: actions/checkout@v2
         uses: psf/black@stable
       - name: pydocstyle
-          run: |
-            python -m pip install --upgrade pip
-            pip install pydocstyle
-            pydocstyle versioned-pickle/
+        run: |
+          python -m pip install --upgrade pip
+          pip install pydocstyle
+          pydocstyle versioned-pickle/
