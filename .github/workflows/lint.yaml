@@ -14,3 +14,4 @@ jobs:
           python -m pip install --upgrade pip
           pip install pydocstyle
           pydocstyle versioned-pickle/
+          echo "pydocstyle passed!"
