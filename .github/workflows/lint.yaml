@@ -11,7 +11,6 @@ jobs:
         uses: psf/black@stable
       - name: pydocstyle
         run: |
-          ls -l
           python -m pip install --upgrade pip
           pip install pydocstyle
-          pydocstyle versioned-pickle/
+          pydocstyle versioned_pickle/
