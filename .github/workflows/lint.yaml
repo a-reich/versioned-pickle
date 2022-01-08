@@ -6,8 +6,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Black formatting
-        uses: actions/checkout@v2
         uses: psf/black@stable
       - name: pydocstyle
         run: |
