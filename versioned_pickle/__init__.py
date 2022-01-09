@@ -1,3 +1,17 @@
+"""Main module of versioned-pickle.
+
+The main API consists of these functions:
+dump
+dumps
+load
+loads
+
+These can be used as a nearly drop-in replacement for the corresponding functions from the stdlib pickle module.
+Only these are needed for normal use. Additional public objects
+(including EnvironmentMetadata and PackageMismatchWarning) are exposed only for potentially customizing the treatment
+of environment metadata or handling of mismatches.
+"""
+
 from __future__ import annotations
 
 import io
