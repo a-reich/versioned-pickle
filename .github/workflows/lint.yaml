@@ -3,7 +3,7 @@ name: Lint
 on: pull_request
 
 jobs:
-  lint:
+  - lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -14,8 +14,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install pydocstyle
           pydocstyle versioned_pickle/
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          channels: conda-forge
-          environment-file: ci_environment.yaml
-          
+
+  - test:
+      runs-on: ubuntu-latest
+      steps:
+        - name: set up environment
+          uses: actions/checkout@v2
+          uses: conda-incubator/setup-miniconda@v2
+          with:
+            channels: conda-forge
+            environment-file: ci_environment.yaml
+          run: pip install .
+
