@@ -1,4 +1,4 @@
-name: Lint
+name: Lint & Test
 
 on: pull_request
 
@@ -25,5 +25,5 @@ jobs:
             channels: conda-forge
             environment-file: ci_environment.yaml
         - run: pip install .
-        - run: pytest tests/* #without a path, integration tests are excluded
+        - run: conda activate test && pytest tests/* #without a path, integration tests are excluded
 
