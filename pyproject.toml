@@ -9,3 +9,6 @@ local_scheme = "dirty-tag"
 
 [tool.pytest.ini_options]
 addopts = "--ignore-glob='*integration*' --cov=versioned_pickle"
+
+[tool.black]
+line-length = 100

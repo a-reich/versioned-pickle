@@ -11,6 +11,7 @@ Only these are needed for normal use. Additional public objects
 (including EnvironmentMetadata and PackageMismatchWarning) are exposed only for potentially customizing the treatment
 of environment metadata or handling of mismatches.
 """
+
 from __future__ import annotations
 
 import io
@@ -20,10 +21,19 @@ from dataclasses import dataclass
 import warnings
 
 try:
-    from importlib.metadata import packages_distributions, version as get_version, PackageNotFoundError
+    from importlib.metadata import (
+        packages_distributions,
+        version as get_version,
+        PackageNotFoundError,
+    )
 except ImportError:
     # needed function was added to the stdlib module in python 3.10, otherwise fall back to 3rd-party version
-    from importlib_metadata import packages_distributions, version as get_version, PackageNotFoundError
+    from importlib_metadata import (
+        packages_distributions,
+        version as get_version,
+        PackageNotFoundError,
+    )
+
 
 @dataclass(frozen=True)
 class EnvironmentMetadata:
@@ -47,7 +57,7 @@ class EnvironmentMetadata:
 
     # TODO: add checks for valid field values? in a optional custom method or an auto-called __post_init__?
     @classmethod
-    def from_scope(cls, package_scope='object', object_modules=None):
+    def from_scope(cls, package_scope="object", object_modules=None):
         """Construct an EnvironmentMetadata based on the type of scope for which packages to include.
 
         This is the typical way to construct instances, not calling the class name directly.
@@ -61,17 +71,17 @@ class EnvironmentMetadata:
             Only used if package_scope is 'object'. Needed modules can be determined automatically using
             _IntrospectionPickler.
         """
-        if package_scope == 'object':
+        if package_scope == "object":
             if object_modules is None:
                 raise TypeError('if package_scope is "object" then object_modules must be given')
             package_names = _get_distributions_from_modules(object_modules)
             packages = {pkg: get_version(pkg) for pkg in package_names}
-        elif package_scope == 'loaded':
+        elif package_scope == "loaded":
             if object_modules is not None:
                 raise TypeError('if package_scope is not "object" then object_modules must be None')
             package_names = _get_distributions_from_modules(sys.modules.copy())
             packages = {pkg: get_version(pkg) for pkg in package_names}
-        elif package_scope == 'installed':
+        elif package_scope == "installed":
             if object_modules is not None:
                 raise TypeError('if package_scope is not "object" then object_modules must be None')
             package_names = {dist for dists in packages_distributions().values() for dist in dists}
@@ -87,15 +97,22 @@ class EnvironmentMetadata:
         Used when one doesn't want to have import versioned_pickle itself, such as in the header created
         for pickle files.
         """
-        result = {'environment_metadata':{
-            'packages': self.packages, 'py_ver': self.py_ver, 'package_scope': self.package_scope}}
+        result = {
+            "environment_metadata": {
+                "packages": self.packages,
+                "py_ver": self.py_ver,
+                "package_scope": self.package_scope,
+            }
+        }
         return result
+
     @classmethod
     def from_header_dict(cls, metadata):
         """Inverse of to_header_dict - create an instance from a native dict in the pickle-header format."""
-        contents = metadata['environment_metadata']
+        contents = metadata["environment_metadata"]
         inst = cls(**contents)
         return inst
+
     def validate_against(self, loaded_env):
         """Validate the environment metadata instance against the one for the loading environment.
 
@@ -103,14 +120,14 @@ class EnvironmentMetadata:
         The validation logic compares only the packages dict, and ignores extra packages in
         the loading env.
         """
-        compare = {pkg: (self.packages[pkg], loaded_env.packages.get(pkg))
-            for pkg in self.packages}
+        compare = {pkg: (self.packages[pkg], loaded_env.packages.get(pkg)) for pkg in self.packages}
         compare = {pkg: versions for pkg, versions in compare.items() if versions[0] != versions[1]}
         if compare:
-            msg = 'Packages from pickling and unpickling environment do not match.'
+            msg = "Packages from pickling and unpickling environment do not match."
             return PackageMismatchWarning(msg, compare)
         else:
             return None
+
 
 class PackageMismatchWarning(Warning):
     """Warning class used when loading pickled data whose metadata doesn't validate against the loading env."""
@@ -123,10 +140,13 @@ class PackageMismatchWarning(Warning):
         """
         self.msg = msg
         self.mismatches = mismatches
-    def __str__(self): # noqa: D401
+
+    def __str__(self):  # noqa: D401
         """Custom str conversion so that warning message shows useful mismatch info."""
-        return f'{self.msg}\nDetails of mismatched pickled, loaded versions:\n' + '\n'.join(
-            [f'{pkg}: {versions}' for pkg, versions in self.mismatches.items()])
+        return f"{self.msg}\nDetails of mismatched pickled, loaded versions:\n" + "\n".join(
+            [f"{pkg}: {versions}" for pkg, versions in self.mismatches.items()]
+        )
+
 
 def _get_distributions_from_modules(module_names):
     """Convert an iterable of module names to their installed distribution names.
@@ -139,10 +159,11 @@ def _get_distributions_from_modules(module_names):
     as used by installers/PyPI is often but not always the same as the top-level package provided,
     or a distribution can provide multiple packages.
     """
-    toplevel_pkgs = {mod.split('.')[0] for mod in module_names}
+    toplevel_pkgs = {mod.split(".")[0] for mod in module_names}
     pkg_to_dists_dict = packages_distributions()
     dists = {dist for pkg in toplevel_pkgs for dist in pkg_to_dists_dict.get(pkg, {})}
     return dists
+
 
 class _IntrospectionPickler(pickle.Pickler):
     """Custom pickler subclass used to detect which modules are used in the components of the object.
@@ -153,6 +174,7 @@ class _IntrospectionPickler(pickle.Pickler):
     def __init__(self, *args, **kwargs):
         self.module_names_found = set()
         super().__init__(*args, **kwargs)
+
     def reducer_override(self, obj):
         """Reduce (i.e. get pickle data) in a custom way that wraps the normal pickle operation.
 
@@ -160,15 +182,16 @@ class _IntrospectionPickler(pickle.Pickler):
         in the hierarchy.
         (Note: support for reducer_override was added to pickle in 3.8).
         """
-        if hasattr(obj, '__module__'): # class objects, functions
+        if hasattr(obj, "__module__"):  # class objects, functions
             self.module_names_found.add(obj.__module__)
-        else: # for instance objects
+        else:  # for instance objects
             self.module_names_found.add(type(obj).__module__)
 
         # continue back to usual reduction
         return NotImplemented
 
-def dump(obj, file, package_scope='object'):
+
+def dump(obj, file, package_scope="object"):
     """Pickle an object's data to a file with environment metadata.
 
     Params
@@ -190,6 +213,7 @@ def dump(obj, file, package_scope='object'):
     pickle.dump(meta_info.to_header_dict(), file)
     file.write(pickled_obj)
 
+
 def load(file, return_meta=False):
     """Load an object from a pickle file saved by 'dump', and validate the environment metadata.
 
@@ -204,17 +228,20 @@ def load(file, return_meta=False):
     header_dict = pickle.load(file)
     pickled_meta = EnvironmentMetadata.from_header_dict(header_dict)
     val = pickle.load(file)
-    loaded_meta = EnvironmentMetadata.from_scope('installed')
+    loaded_meta = EnvironmentMetadata.from_scope("installed")
     validation = pickled_meta.validate_against(loaded_meta)
     if isinstance(validation, PackageMismatchWarning):
         warnings.warn(validation)
     return (val, pickled_meta) if return_meta else val
 
-def dumps(obj, package_scope='object'):
+
+def dumps(obj, package_scope="object"):
     """Like dump, but returns an in-memory bytes object instead of using a file."""
     f = io.BytesIO()
     dump(obj, f)
     return f.getvalue()
+
+
 def loads(data, return_meta=False):
     """Like load, but takes a in-memory bytes object."""
     f = io.BytesIO(data)

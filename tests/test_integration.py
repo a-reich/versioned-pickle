@@ -15,6 +15,7 @@ import versioned_pickle as vpickle
 from unittest.mock import Mock, patch, call
 import unittest.mock as mock
 
+
 @fixture
 def with_testpkg_installed():
     subprocess.run([sys.executable] + "-m pip install tests/testing_pkg".split(), check=True)
@@ -30,7 +31,7 @@ def with_testpkg_installed():
 
 
 def test_installed_not_imported(with_testpkg_installed):
-    meta_inst = vpickle.EnvironmentMetadata.from_scope(package_scope='installed')
-    assert 'testing-pkg' in meta_inst.packages
-    meta_load = vpickle.EnvironmentMetadata.from_scope(package_scope='loaded')
-    assert 'testing-pkg' not in meta_load.packages
+    meta_inst = vpickle.EnvironmentMetadata.from_scope(package_scope="installed")
+    assert "testing-pkg" in meta_inst.packages
+    meta_load = vpickle.EnvironmentMetadata.from_scope(package_scope="loaded")
+    assert "testing-pkg" not in meta_load.packages

@@ -1,0 +1,32 @@
+name: Lint & Test
+
+on: pull_request
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Black formatting
+        uses: psf/black@stable
+      - name: pydocstyle
+        run: |
+          python -m pip install --upgrade pip
+          pip install pydocstyle
+          pydocstyle versioned_pickle/
+
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run: # must use login shell to detect conda setup, see https://github.com/conda-incubator/setup-miniconda#important
+        shell: bash -l {0}
+    steps:
+        - uses: actions/checkout@v2
+        - name: set up environment
+          uses: conda-incubator/setup-miniconda@v2
+          with:
+            channels: conda-forge
+            environment-file: ci_environment.yaml
+        - run: conda activate test && pip install .
+        - run: conda activate test && pytest tests/* #without a path, integration tests are excluded
+

@@ -2,8 +2,8 @@
 
 from dataclasses import dataclass
 
+
 @dataclass
 class MyCls:
-    x:...
-    y:... = None
-
+    x: ...
+    y: ... = None

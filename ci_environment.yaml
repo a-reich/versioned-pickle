@@ -1,0 +1,50 @@
+name: vpickle
+channels:
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1
+  - _openmp_mutex=4.5
+  - attrs=21.2.0
+  - brotlipy=0.7.0
+  - ca-certificates=2021.10.26
+  - certifi=2021.10.8
+  - cffi=1.14.6
+  - charset-normalizer=2.0.4
+  - coverage=5.5
+  - cryptography=36.0.0
+  - idna=3.3
+  - importlib-metadata=4.8.2
+  - iniconfig=1.1.1
+  - ld_impl_linux-64=2.35.1
+  - libffi=3.3
+  - libgcc-ng=9.3.0
+  - libgomp=9.3.0
+  - libstdcxx-ng=9.3.0
+  - ncurses=6.3
+  - openssl=1.1.1l
+  - packaging=21.3
+  - pip=21.2.4
+  - pluggy=1.0.0
+  - py=1.10.0
+  - pycparser=2.21
+  - pyopenssl=21.0.0
+  - pyparsing=3.0.4
+  - pysocks=1.7.1
+  - pytest=6.2.5
+  - pytest-cov=3.0.0
+  - pytest-mock=3.6.1
+  - python=3.9.7
+  - readline=8.1
+  - requests=2.26.0
+  - setuptools=58.0.4
+  - six=1.16.0
+  - sqlite=3.37.0
+  - tk=8.6.11
+  - toml=0.10.2
+  - tzdata=2021e
+  - urllib3=1.26.7
+  - wheel=0.37.0
+  - xz=5.2.5
+  - zipp=3.6.0
+  - zlib=1.2.11
+prefix: /home/ec2-user/.conda/envs/vpickle
