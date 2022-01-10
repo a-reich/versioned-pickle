@@ -25,4 +25,5 @@ jobs:
             channels: conda-forge
             environment-file: ci_environment.yaml
         - run: pip install .
+        - run: pytest tests/* #without a path, integration tests are excluded
 
