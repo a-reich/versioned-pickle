@@ -24,6 +24,7 @@ jobs:
           with:
             channels: conda-forge
             environment-file: ci_environment.yaml
-        - run: pip install .
+        - run: conda init bash
+        - run: conda activate test && echo $(which python) && pip install .
         - run: conda activate test && pytest tests/* #without a path, integration tests are excluded
 
