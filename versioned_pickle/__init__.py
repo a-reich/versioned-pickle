@@ -227,12 +227,22 @@ def load(file, return_meta=False):
     """
     header_dict = pickle.load(file)
     pickled_meta = EnvironmentMetadata.from_header_dict(header_dict)
-    val = pickle.load(file)
-    loaded_meta = EnvironmentMetadata.from_scope("installed")
+    loaded_meta = EnvironmentMetadata.from_scope("installed")  # broadest scope
     validation = pickled_meta.validate_against(loaded_meta)
-    if isinstance(validation, PackageMismatchWarning):
-        warnings.warn(validation)
-    return (val, pickled_meta) if return_meta else val
+    try:
+        val = pickle.load(file)
+        if isinstance(validation, PackageMismatchWarning):
+            warnings.warn(validation)
+        return (val, pickled_meta) if return_meta else val
+    except Exception as exc:
+        if isinstance(validation, PackageMismatchWarning):
+            msg = (
+                "Encountered an error when unpickling the underlying object. "
+                "This may be caused by the fact that packages from pickling"
+                " and unpickling environment do not match."
+            )
+            validation.msg = msg
+            raise validation from exc
 
 
 def dumps(obj, package_scope="object"):
