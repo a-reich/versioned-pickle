@@ -204,14 +204,19 @@ def dump(obj, file, package_scope="object"):
         or "loaded": any module that has currently been imported (regardless of where),
         or "installed": all installed distributions.
     """
-    f_temp = io.BytesIO()
-    pickler = _IntrospectionPickler(f_temp)
-    pickler.dump(obj)
-    pickled_obj = f_temp.getvalue()
-    f_temp.close()
-    meta_info = EnvironmentMetadata.from_scope(object_modules=pickler.module_names_found)
-    pickle.dump(meta_info.to_header_dict(), file)
-    file.write(pickled_obj)
+    if package_scope == "object":
+        f_temp = io.BytesIO()
+        pickler = _IntrospectionPickler(f_temp)
+        pickler.dump(obj)
+        pickled_obj = f_temp.getvalue()
+        f_temp.close()
+        meta_info = EnvironmentMetadata.from_scope(object_modules=pickler.module_names_found)
+        pickle.dump(meta_info.to_header_dict(), file)
+        file.write(pickled_obj)
+    else:
+        meta_info = EnvironmentMetadata.from_scope(package_scope=package_scope)
+        pickle.dump(meta_info.to_header_dict(), file)
+        pickle.dump(obj, file)
 
 
 def load(file, return_meta=False):
@@ -248,12 +253,12 @@ def load(file, return_meta=False):
 def dumps(obj, package_scope="object"):
     """Like dump, but returns an in-memory bytes object instead of using a file."""
     f = io.BytesIO()
-    dump(obj, f)
+    dump(obj, f, package_scope=package_scope)
     return f.getvalue()
 
 
 def loads(data, return_meta=False):
-    """Like load, but takes a in-memory bytes object."""
+    """Like load, but takes a bytes-like object."""
     f = io.BytesIO(data)
     obj = load(f, return_meta)
     return obj
