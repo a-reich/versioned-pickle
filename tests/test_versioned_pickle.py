@@ -161,10 +161,11 @@ def test_dump_match(mocker):
     loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
     assert obj_for_roundtrip == loaded_copy
 
-    dumped_bytes = vpickle.dumps(obj_for_roundtrip, 'loaded')
+    dumped_bytes = vpickle.dumps(obj_for_roundtrip, "loaded")
     loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
     assert obj_for_roundtrip == loaded_copy
-    assert meta.package_scope == 'loaded'
+    assert meta.package_scope == "loaded"
+
 
 def test_dump_mismatch(mocker):
     # need an object whose parts can be compared reasonably for equality
@@ -174,6 +175,7 @@ def test_dump_mismatch(mocker):
     assert obj_for_roundtrip == loaded_copy
 
     from versioned_pickle import get_version as unpatched_version_import
+
     mocker.patch(
         "versioned_pickle.get_version",
         new=lambda x: "dummy" if x == "requests" else unpatched_version_import(x),
@@ -185,24 +187,31 @@ def test_dump_mismatch(mocker):
         loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
         assert obj_for_roundtrip == loaded_copy
 
+
 @dataclasses.dataclass
 class UnLoadable:
     """Need an object that can be pickled but errors on unpickle"""
+
     x: ... = None
+
     def __getstate__(self):
         return self.__dict__
+
     def __setstate__(self, state):
         assert False
 
+
 def test_load_with_error(mocker, requests_imported):
     obj = UnLoadable()
-    dumped_bytes = vpickle.dumps(obj, package_scope='loaded')
+    dumped_bytes = vpickle.dumps(obj, package_scope="loaded")
 
     from versioned_pickle import get_version as unpatched_version_import
+
     mocker.patch(
         "versioned_pickle.get_version",
         new=lambda x: "dummy" if x == "requests" else unpatched_version_import(x),
     )
-    with pytest.raises(vpickle.PackageMismatchWarning, match="Encountered an error when unpickling"):
+    with pytest.raises(
+        vpickle.PackageMismatchWarning, match="Encountered an error when unpickling"
+    ):
         vpickle.loads(dumped_bytes)
-
