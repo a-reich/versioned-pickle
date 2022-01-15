@@ -1,0 +1,21 @@
+name: Build Distributions
+
+on: release
+ release:
+    types: published
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+        - name: run build of sdist & wheel
+        - run: |
+            pip install build
+            python -m build
+        - name: archive production artifacts
+          uses: actions/upload-artifact@v2
+          with:
+            name: distributions
+            path: dist
