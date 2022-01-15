@@ -11,7 +11,7 @@ jobs:
     steps:
         - uses: actions/checkout@v2
         - name: run build of sdist & wheel
-        - run: |
+          run: |
             pip install build
             python -m build
         - name: archive production artifacts
