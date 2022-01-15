@@ -28,7 +28,7 @@ class MyCls:
 
 
 @fixture
-def import_module():
+def requests_imported():
     """For tests that assume requests is imported."""
     import requests
 
@@ -36,7 +36,7 @@ def import_module():
 
 
 @fixture
-def sample_object(import_module):
+def sample_object(requests_imported):
     """This object tests different types of values and structures including a class instance, a class object,
     reference to a nested module requests.auth, and a function.
     Tests recursing into containers and instance attrs.
@@ -56,7 +56,7 @@ def test_pickler(sample_object):
 class TestEnvMetadata:
     """Test instantiation of EnvironmentMetadata"""
 
-    def test_env_metadata_loaded(self, import_module):
+    def test_env_metadata_loaded(self, requests_imported):
         meta = vpickle.EnvironmentMetadata.from_scope(package_scope="loaded")
         assert "requests" in meta.packages
 
@@ -154,17 +154,31 @@ def test_metadata_validate():
     assert isinstance(meta_pickled.validate_against(meta_loaded), vpickle.PackageMismatchWarning)
 
 
-def test_dump(mocker):
+def test_dump_match(mocker):
     # need an object whose parts can be compared reasonably for equality
     obj_for_roundtrip = [MyCls("foo"), requests.Request]
     dumped_bytes = vpickle.dumps(obj_for_roundtrip)
     loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
     assert obj_for_roundtrip == loaded_copy
-    from versioned_pickle import get_version as local_version_import
+
+    dumped_bytes = vpickle.dumps(obj_for_roundtrip, "loaded")
+    loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
+    assert obj_for_roundtrip == loaded_copy
+    assert meta.package_scope == "loaded"
+
+
+def test_dump_mismatch(mocker):
+    # need an object whose parts can be compared reasonably for equality
+    obj_for_roundtrip = [MyCls("foo"), requests.Request]
+    dumped_bytes = vpickle.dumps(obj_for_roundtrip)
+    loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
+    assert obj_for_roundtrip == loaded_copy
+
+    from versioned_pickle import get_version as unpatched_version_import
 
     mocker.patch(
         "versioned_pickle.get_version",
-        new=lambda x: "dummy" if x == "requests" else local_version_import(x),
+        new=lambda x: "dummy" if x == "requests" else unpatched_version_import(x),
     )
     with pytest.warns(
         vpickle.PackageMismatchWarning,
@@ -172,3 +186,32 @@ def test_dump(mocker):
     ) as record:
         loaded_copy, meta = vpickle.loads(dumped_bytes, return_meta=True)
         assert obj_for_roundtrip == loaded_copy
+
+
+@dataclasses.dataclass
+class UnLoadable:
+    """Need an object that can be pickled but errors on unpickle"""
+
+    x: ... = None
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        assert False
+
+
+def test_load_with_error(mocker, requests_imported):
+    obj = UnLoadable()
+    dumped_bytes = vpickle.dumps(obj, package_scope="loaded")
+
+    from versioned_pickle import get_version as unpatched_version_import
+
+    mocker.patch(
+        "versioned_pickle.get_version",
+        new=lambda x: "dummy" if x == "requests" else unpatched_version_import(x),
+    )
+    with pytest.raises(
+        vpickle.PackageMismatchWarning, match="Encountered an error when unpickling"
+    ):
+        vpickle.loads(dumped_bytes)

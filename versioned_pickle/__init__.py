@@ -204,14 +204,19 @@ def dump(obj, file, package_scope="object"):
         or "loaded": any module that has currently been imported (regardless of where),
         or "installed": all installed distributions.
     """
-    f_temp = io.BytesIO()
-    pickler = _IntrospectionPickler(f_temp)
-    pickler.dump(obj)
-    pickled_obj = f_temp.getvalue()
-    f_temp.close()
-    meta_info = EnvironmentMetadata.from_scope(object_modules=pickler.module_names_found)
-    pickle.dump(meta_info.to_header_dict(), file)
-    file.write(pickled_obj)
+    if package_scope == "object":
+        f_temp = io.BytesIO()
+        pickler = _IntrospectionPickler(f_temp)
+        pickler.dump(obj)
+        pickled_obj = f_temp.getvalue()
+        f_temp.close()
+        meta_info = EnvironmentMetadata.from_scope(object_modules=pickler.module_names_found)
+        pickle.dump(meta_info.to_header_dict(), file)
+        file.write(pickled_obj)
+    else:
+        meta_info = EnvironmentMetadata.from_scope(package_scope=package_scope)
+        pickle.dump(meta_info.to_header_dict(), file)
+        pickle.dump(obj, file)
 
 
 def load(file, return_meta=False):
@@ -227,23 +232,33 @@ def load(file, return_meta=False):
     """
     header_dict = pickle.load(file)
     pickled_meta = EnvironmentMetadata.from_header_dict(header_dict)
-    val = pickle.load(file)
-    loaded_meta = EnvironmentMetadata.from_scope("installed")
+    loaded_meta = EnvironmentMetadata.from_scope("installed")  # broadest scope
     validation = pickled_meta.validate_against(loaded_meta)
-    if isinstance(validation, PackageMismatchWarning):
-        warnings.warn(validation)
-    return (val, pickled_meta) if return_meta else val
+    try:
+        val = pickle.load(file)
+        if isinstance(validation, PackageMismatchWarning):
+            warnings.warn(validation)
+        return (val, pickled_meta) if return_meta else val
+    except Exception as exc:
+        if isinstance(validation, PackageMismatchWarning):
+            msg = (
+                "Encountered an error when unpickling the underlying object. "
+                "This may be caused by the fact that packages from pickling"
+                " and unpickling environment do not match."
+            )
+            validation.msg = msg
+            raise validation from exc
 
 
 def dumps(obj, package_scope="object"):
     """Like dump, but returns an in-memory bytes object instead of using a file."""
     f = io.BytesIO()
-    dump(obj, f)
+    dump(obj, f, package_scope=package_scope)
     return f.getvalue()
 
 
 def loads(data, return_meta=False):
-    """Like load, but takes a in-memory bytes object."""
+    """Like load, but takes a bytes-like object."""
     f = io.BytesIO(data)
     obj = load(f, return_meta)
     return obj
