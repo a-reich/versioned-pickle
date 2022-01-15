@@ -8,7 +8,8 @@ build-backend = "setuptools.build_meta"
 local_scheme = "dirty-tag"
 
 [tool.pytest.ini_options]
-addopts = "--ignore-glob='*integration*' --cov=versioned_pickle"
+# skip integration tests by default with bare 'pytest' (use -m 'integration or not integration' to include)
+addopts = "-m 'not integration' --cov=versioned_pickle"
 
 [tool.black]
 line-length = 100
