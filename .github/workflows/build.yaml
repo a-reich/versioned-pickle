@@ -2,7 +2,7 @@ name: Build Distributions
 
 on: release
  release:
-    types: published
+    types: [created]
 
 
 jobs:
