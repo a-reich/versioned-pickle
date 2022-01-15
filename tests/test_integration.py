@@ -29,6 +29,7 @@ def with_testpkg_installed():
     else:
         raise Exception("uninstall did not succeed")
 
+
 @pytest.mark.integration
 def test_installed_not_imported(with_testpkg_installed):
     meta_inst = vpickle.EnvironmentMetadata.from_scope(package_scope="installed")
