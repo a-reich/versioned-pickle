@@ -20,7 +20,8 @@ import sys
 from dataclasses import dataclass
 import warnings
 import typing as typ
-from typing import Any, Literal, Iterable, Set
+from typing import Any, Literal, Iterable, Set, Union, Optional
+from typing_extensions import TypeAlias
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import (
@@ -59,7 +60,9 @@ class EnvironmentMetadata:
 
     # TODO: add checks for valid field values? in a optional custom method or an auto-called __post_init__?
     @classmethod
-    def from_scope(cls, package_scope: str ="object", object_modules: Iterable[str]|None =None) -> EnvironmentMetadata:
+    def from_scope(
+        cls, package_scope: str = "object", object_modules: Iterable[str] | None = None
+    ) -> EnvironmentMetadata:
         """Construct an EnvironmentMetadata based on the type of scope for which packages to include.
 
         This is the typical way to construct instances, not calling the class name directly.
@@ -130,7 +133,10 @@ class EnvironmentMetadata:
         else:
             return None
 
-MismatchInfo = dict[str, tuple[str, str|None]]
+
+MismatchInfo: TypeAlias = dict[str, tuple[str, Optional[str]]]
+
+
 class PackageMismatchWarning(Warning):
     """Warning class used when loading pickled data whose metadata doesn't validate against the loading env."""
 
@@ -193,7 +199,7 @@ class _IntrospectionPickler(pickle.Pickler):
         return NotImplemented
 
 
-def dump(obj: object, file: typ.IO[bytes], package_scope: str ="object") -> None:
+def dump(obj: object, file: typ.IO[bytes], package_scope: str = "object") -> None:
     """Pickle an object's data to a file with environment metadata.
 
     Params
@@ -221,7 +227,7 @@ def dump(obj: object, file: typ.IO[bytes], package_scope: str ="object") -> None
         pickle.dump(obj, file)
 
 
-def load(file: typ.IO[bytes], return_meta: bool =False) -> object: # type: ignore[return]
+def load(file: typ.IO[bytes], return_meta: bool = False) -> object:  # type: ignore[return]
     """Load an object from a pickle file saved by 'dump', and validate the environment metadata.
 
     The saved EnvironmentMetadata from the environment that dumped the file is checked against the
@@ -252,14 +258,14 @@ def load(file: typ.IO[bytes], return_meta: bool =False) -> object: # type: ignor
             raise validation from exc
 
 
-def dumps(obj: object, package_scope: str ="object") -> bytes:
+def dumps(obj: object, package_scope: str = "object") -> bytes:
     """Like dump, but returns an in-memory bytes object instead of using a file."""
     f = io.BytesIO()
     dump(obj, f, package_scope=package_scope)
     return f.getvalue()
 
 
-def loads(data: bytes, return_meta: bool =False) -> object:
+def loads(data: bytes, return_meta: bool = False) -> object:
     """Like load, but takes a bytes-like object."""
     f = io.BytesIO(data)
     obj = load(f, return_meta)
