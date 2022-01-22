@@ -19,14 +19,16 @@ import pickle
 import sys
 from dataclasses import dataclass
 import warnings
+import typing as typ
+from typing import Any, Literal, Iterable, Set
 
-try:
+if sys.version_info >= (3, 10):
     from importlib.metadata import (
         packages_distributions,
         version as get_version,
         PackageNotFoundError,
     )
-except ImportError:
+else:
     # needed function was added to the stdlib module in python 3.10, otherwise fall back to 3rd-party version
     from importlib_metadata import (
         packages_distributions,
@@ -51,13 +53,13 @@ class EnvironmentMetadata:
 
     """
 
-    packages: ...
-    py_ver: ...
-    package_scope: ...
+    packages: dict[str, str]
+    py_ver: tuple[int, int, int]
+    package_scope: str
 
     # TODO: add checks for valid field values? in a optional custom method or an auto-called __post_init__?
     @classmethod
-    def from_scope(cls, package_scope="object", object_modules=None):
+    def from_scope(cls, package_scope: str ="object", object_modules: Iterable[str]|None =None) -> EnvironmentMetadata:
         """Construct an EnvironmentMetadata based on the type of scope for which packages to include.
 
         This is the typical way to construct instances, not calling the class name directly.
@@ -91,7 +93,7 @@ class EnvironmentMetadata:
 
         return cls(packages=packages, py_ver=sys.version_info[:3], package_scope=package_scope)
 
-    def to_header_dict(self):
+    def to_header_dict(self) -> dict[str, Any]:
         """Get a representation of the metadata as a Python-native dict.
 
         Used when one doesn't want to have import versioned_pickle itself, such as in the header created
@@ -107,13 +109,13 @@ class EnvironmentMetadata:
         return result
 
     @classmethod
-    def from_header_dict(cls, metadata):
+    def from_header_dict(cls, metadata: dict[str, Any]) -> EnvironmentMetadata:
         """Inverse of to_header_dict - create an instance from a native dict in the pickle-header format."""
         contents = metadata["environment_metadata"]
         inst = cls(**contents)
         return inst
 
-    def validate_against(self, loaded_env):
+    def validate_against(self, loaded_env: EnvironmentMetadata) -> PackageMismatchWarning | None:
         """Validate the environment metadata instance against the one for the loading environment.
 
         Typically this would not be called by users, but should be handled by the dump/load API.
@@ -128,11 +130,11 @@ class EnvironmentMetadata:
         else:
             return None
 
-
+MismatchInfo = dict[str, tuple[str, str|None]]
 class PackageMismatchWarning(Warning):
     """Warning class used when loading pickled data whose metadata doesn't validate against the loading env."""
 
-    def __init__(self, msg, mismatches):
+    def __init__(self, msg: str, mismatches: MismatchInfo) -> None:
         """Initialize an instance with message string and the mismatch info.
 
         mismatches should be a dict of package names to tuples of form
@@ -141,14 +143,14 @@ class PackageMismatchWarning(Warning):
         self.msg = msg
         self.mismatches = mismatches
 
-    def __str__(self):  # noqa: D401
+    def __str__(self) -> str:  # noqa: D401
         """Custom str conversion so that warning message shows useful mismatch info."""
         return f"{self.msg}\nDetails of mismatched pickled, loaded versions:\n" + "\n".join(
             [f"{pkg}: {versions}" for pkg, versions in self.mismatches.items()]
         )
 
 
-def _get_distributions_from_modules(module_names):
+def _get_distributions_from_modules(module_names: Iterable[str]) -> Set[str]:
     """Convert an iterable of module names to their installed distribution names.
 
     The modules do not have to be top level. If they don't belong to distributions that are
@@ -171,11 +173,11 @@ class _IntrospectionPickler(pickle.Pickler):
     module_names_found attribute stores the detected modules.
     """
 
-    def __init__(self, *args, **kwargs):
-        self.module_names_found = set()
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.module_names_found: Set[str] = set()
         super().__init__(*args, **kwargs)
 
-    def reducer_override(self, obj):
+    def reducer_override(self, obj: object) -> object:
         """Reduce (i.e. get pickle data) in a custom way that wraps the normal pickle operation.
 
         This reducer is for recording the modules defining the type of each traversed object
@@ -191,7 +193,7 @@ class _IntrospectionPickler(pickle.Pickler):
         return NotImplemented
 
 
-def dump(obj, file, package_scope="object"):
+def dump(obj: object, file: typ.IO[bytes], package_scope: str ="object") -> None:
     """Pickle an object's data to a file with environment metadata.
 
     Params
@@ -219,7 +221,7 @@ def dump(obj, file, package_scope="object"):
         pickle.dump(obj, file)
 
 
-def load(file, return_meta=False):
+def load(file: typ.IO[bytes], return_meta: bool =False) -> object: # type: ignore[return]
     """Load an object from a pickle file saved by 'dump', and validate the environment metadata.
 
     The saved EnvironmentMetadata from the environment that dumped the file is checked against the
@@ -250,14 +252,14 @@ def load(file, return_meta=False):
             raise validation from exc
 
 
-def dumps(obj, package_scope="object"):
+def dumps(obj: object, package_scope: str ="object") -> bytes:
     """Like dump, but returns an in-memory bytes object instead of using a file."""
     f = io.BytesIO()
     dump(obj, f, package_scope=package_scope)
     return f.getvalue()
 
 
-def loads(data, return_meta=False):
+def loads(data: bytes, return_meta: bool =False) -> object:
     """Like load, but takes a bytes-like object."""
     f = io.BytesIO(data)
     obj = load(f, return_meta)
