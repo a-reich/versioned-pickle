@@ -23,7 +23,7 @@ setuptools.setup(
     description="A small utility package for adding environment metadata to pickles and warning on mismatch when loaded",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    install_requires=['importlib-metadata>=4.4;python_version<"3.10"'],
+    install_requires=['importlib-metadata>=4.4;python_version<"3.10"', "typing-extensions>=3.10"],
     extras_require={"dev": ["pytest", "pytest-mock", "pytest-cov", "requests"]},
     include_package_data=True,
     url="https://github.com/a-reich/versioned_pickle",

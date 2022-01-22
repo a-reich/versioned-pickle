@@ -13,3 +13,8 @@ addopts = "-m 'not integration' --cov=versioned_pickle"
 
 [tool.black]
 line-length = 100
+
+[tool.mypy]
+strict = true
+show_error_codes = true
+disallow_untyped_calls = false
