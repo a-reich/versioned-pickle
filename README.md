@@ -21,7 +21,7 @@ are popular (pip, conda, pipenv, poetry, etc.).
 # Installation
 To install from source the latest commit from Github: `pip install git+https://github.com/a-reich/versioned-pickle.git`  
 To install a specific built wheel from GH:  
-` pip install versioned-pickle@https://github.com/a-reich/versioned-pickle/releases/download/v0.2.1/versioned_pickle-0.2.1-py3-none-any.whl`  
+` pip install versioned-pickle@https://github.com/a-reich/versioned-pickle/releases/download/v0.3.2/versioned_pickle-0.3.2-py3-none-any.whl`  
 Python versions >=3.8 are supported.
 # Usage
 `versioned-pickle` provides a drop-in replacement for the standard library `pickle` module,
