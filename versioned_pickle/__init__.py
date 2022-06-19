@@ -47,8 +47,10 @@ class EnvironmentMetadata:
 
     Attributes
     ---------
-    packages: dict of distribution names to version strings
-    py_ver: 3-tuple of ints, the python interpreter version
+    packages:
+        dict of distribution names to version strings
+    py_ver: 3-tuple of ints,
+        the python interpreter version
     package_scope: {"object", "loaded", "installed"},
         the type of scope that was used for which packages to include.
 
@@ -66,7 +68,8 @@ class EnvironmentMetadata:
         """Construct an EnvironmentMetadata based on the type of scope for which packages to include.
 
         This is the typical way to construct instances, not calling the class name directly.
-        Params
+
+        Parameters
         -------
         package_scope: str,
             can be "object" meaning the specific modules needed for an object, in which case module names
@@ -202,7 +205,7 @@ class _IntrospectionPickler(pickle.Pickler):
 def dump(obj: object, file: typ.IO[bytes], package_scope: str = "object") -> None:
     """Pickle an object's data to a file with environment metadata.
 
-    Params
+    Parameters
     ------
     obj: any object to pickle
     file: file-like obj (writable, binary mode)
