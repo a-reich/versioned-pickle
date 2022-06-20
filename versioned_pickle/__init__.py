@@ -203,7 +203,11 @@ class _IntrospectionPickler(pickle.Pickler):
         return NotImplemented
 
 
-def dump(obj: object, file: typ.IO[bytes], package_scope: str = "object") -> None:
+def dump(
+    obj: object,
+    file: typ.IO[bytes],
+    package_scope: Literal["object", "loaded", "installed"] = "object",
+) -> None:
     """Pickle an object's data to a file with environment metadata.
 
     Parameters
@@ -264,7 +268,7 @@ def load(file: typ.IO[bytes], return_meta: bool = False) -> object:  # type: ign
             raise validation from exc
 
 
-def dumps(obj: object, package_scope: str = "object") -> bytes:
+def dumps(obj: object, package_scope: Literal["object", "loaded", "installed"] = "object") -> bytes:
     """Like dump, but returns an in-memory bytes object instead of using a file."""
     f = io.BytesIO()
     dump(obj, f, package_scope=package_scope)
