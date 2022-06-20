@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>versioned-pickle &#8212; versioned-pickle  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="versioned-pickle">
+<h1>versioned-pickle<a class="headerlink" href="#versioned-pickle" title="Permalink to this heading">¶</a></h1>
+<p>A small utility Python package for adding environment metadata to pickle files and warning on mismatch when loaded.</p>
+<p>Rendered documentation including full reference is available at the <a class="reference external" href="https://a-reich.github.io/versioned-pickle/">Github Pages site</a>. The repository is <a class="reference external" href="https://github.com/a-reich/versioned-pickle">here</a>.</p>
+</section>
+<section id="what-does-this-do-for-me">
+<h1>What does this do for me?<a class="headerlink" href="#what-does-this-do-for-me" title="Permalink to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">versioned-pickle</span></code> records metadata about the Python environment when used to pickle an object,
+checks the new environment when unpickling, compares the two and warns if they are not considered to match.</p>
+<p>If the pickle is completely unable to load, unpickling will still fails but you can check the metadata to determine which packages’ versions
+you should fix, and then hopefully reload successfully. In case of pickles that would load successfully but with results
+that are silently incorrect or give wrong results when used with the different package versions, you <strong>immediately</strong>
+see the warning indicating you may want to fix your versions, instead of assuming all is well and
+encountering problems later when they are hard to debug or cause more damage.<br />
+See <a class="reference internal" href="#background-and-motivation"><span class="std std-doc">Background and Motivation</span></a> for a full explanation.</p>
+</section>
+<section id="what-does-this-not-do-for-me">
+<h1>What does this NOT do for me?<a class="headerlink" href="#what-does-this-not-do-for-me" title="Permalink to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">versioned-pickle</span></code> will not “fix” your pickles from one environment so they can be used in a different one.</p>
+<p><code class="docutils literal notranslate"><span class="pre">versioned-pickle</span></code> will not handle the creation of a compatible environment for you - you will need to use the
+outputted info to update your environment in whatever way you choose. This is because Python packaging is a complex
+ecosystem and how to specify then recreate an environment has many nuances and several different tools
+are popular (pip, conda, pipenv, poetry, etc.).</p>
+</section>
+<section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h1>
+<p>To install from source the latest commit from Github:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">a</span><span class="o">-</span><span class="n">reich</span><span class="o">/</span><span class="n">versioned</span><span class="o">-</span><span class="n">pickle</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>To install a specific built wheel from GH:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">versioned</span><span class="o">-</span><span class="n">pickle</span><span class="nd">@https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">a</span><span class="o">-</span><span class="n">reich</span><span class="o">/</span><span class="n">versioned</span><span class="o">-</span><span class="n">pickle</span><span class="o">/</span><span class="n">releases</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">v0</span><span class="mf">.3.3</span><span class="o">/</span><span class="n">versioned_pickle</span><span class="o">-</span><span class="mf">0.3.2</span><span class="o">-</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span>
+</pre></div>
+</div>
+<p>Python versions &gt;=3.8 are supported.</p>
+</section>
+<section id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">versioned-pickle</span></code> provides a drop-in replacement for the standard library <code class="docutils literal notranslate"><span class="pre">pickle</span></code> module,
+namely <code class="docutils literal notranslate"><span class="pre">dump/dumps</span></code> and <code class="docutils literal notranslate"><span class="pre">load/loads</span></code> functions. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># with pandas==1.3.0 installed </span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span><span class="o">,</span> <span class="nn">versioned_pickle</span> <span class="k">as</span> <span class="nn">vpickle</span>
+<span class="n">myobj</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)})</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;myobj.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+	<span class="n">vpickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">myobj</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+<span class="c1"># then, with pandas==1.3.4 installed</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;myobj.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+	<span class="n">newobj</span> <span class="o">=</span> <span class="n">vpickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="c1"># C:\Users\asafs\Desktop\Asaf\versioned_pickle\versioned_pickle\__init__.py:210: PackageMismatchWarning: Packages from pickling and unpickling environment do not match.</span>
+<span class="c1"># Details of mismatched pickled, loaded versions:</span>
+<span class="c1"># pandas: (&#39;1.3.0&#39;, &#39;1.3.4&#39;)</span>
+</pre></div>
+</div>
+<p>Three different methods (“scopes”) are supported for determining which packages (or more properly, ‘distributions’)
+to include, in increasing order of strictness:</p>
+<ul class="simple">
+<li><p>“object” (default) - the specific modules encountered when pickling the object</p></li>
+<li><p>“loaded” - any module that has currently been imported</p></li>
+<li><p>“installed” - all installed distributions.</p></li>
+</ul>
+<p>(The Python version is also recorded but not used in validation by default).</p>
+<p>A unique feature of the tool which is less obvious and which users might not know how to implement for themselves
+is the “object” scope, which tells versioned-pickle to <strong>introspect</strong> the object and intelligently <strong>determine</strong>
+which packages need their versions recorded, based on which modules define the types encountered during pickling.
+This is handy if, for instance, you have a dictionary of pandas DataFrames you were working with and did
+some plotting of with matplotlib. You can pickle the dictionary for use later, and versioned-pickle
+will record the pandas version for validation
+but ignore matplotlib (which you don’t really need just to load the object.)</p>
+<p>Environment metadata is obtained using <code class="docutils literal notranslate"><span class="pre">importlib.metadata</span></code>. Modules that are loaded directly
+from sys.path without being installed as part of a distribution, or functions/classes
+only defined in <strong>main</strong>, are ignored (it’s assumed that if you’re using this package you already
+know not to do either).</p>
+<p>One feature of versioned-pickle is interoperability with regular pickle:
+if for some reason your file is sent to someone who isn’t aware of vpickle or doesn’t want to use it,
+they can still unpickle the file and will first get the metadata header, then on second read the desired object.</p>
+<p>For more detailed documentation see the docstrings.</p>
+</section>
+<section id="background-and-motivation">
+<h1>Background and Motivation<a class="headerlink" href="#background-and-motivation" title="Permalink to this heading">¶</a></h1>
+<p>The <a class="reference external" href="https://docs.python.org/3/library/pickle.html">pickle protocol</a> is a powerful method provided by Python
+for serializing and deserializing Python objects. It is popular since it is easy for users,
+and supported on a very wide variety of complex or nested objects - it often “just works” for new custom types
+from whatever libraries you’re using and library authors can customize the process.</p>
+<p>However, experts often raise problems with its use in various scenarios, including long-term storage
+or sending pickles between different contexts/applications. One issue is that pickling can be sensitive to
+changes in the code of the types being pickled. This is because pickle serializes the <em>data</em>
+belonging to e.g. a class instance, but not the code defining the class behavior - when unpickled,
+the class name is simply looked up and imported if necessary. Therefore, <strong>any time some of the modules an object relies on
+have different versions when unpickling than when pickled is a potential source of bugs</strong>.</p>
+<p>For example, this pandas <a class="reference external" href="https://github.com/pandas-dev/pandas/issues/34535">issue</a> reported that
+pandas DataFrames created with pandas 0.25 failed on loading with pandas 1.0.3. (Note that pickle compatibility is a stronger requirement than normal forward compatibility -
+even if a library declares it guarantees Semantic Versioning, this does not guarantee the former.)
+<strong>This is the problem versioned-pickle aims to help with.</strong></p>
+<p>There are two sorts of issues that can be caused by packages’ pickle incompatibility:</p>
+<section id="unpickling-failures">
+<h2>1. Unpickling failures<a class="headerlink" href="#unpickling-failures" title="Permalink to this heading">¶</a></h2>
+<p>Unpickling fails outright with different versions, i.e. raises an exception. This scenario
+is difficult to recover from after the fact, but it is clear that something went wrong.</p>
+</section>
+<section id="unpickling-gives-silently-incorrect-results">
+<h2>2. Unpickling gives silently incorrect results<a class="headerlink" href="#unpickling-gives-silently-incorrect-results" title="Permalink to this heading">¶</a></h2>
+<p>Unpickling itself may execute but give objects whose data is invalid or gives incorrect results in
+the new environment.<br />
+For example, suppose we have a class <code class="docutils literal notranslate"><span class="pre">Employee</span></code> which stores info about employees
+including an integer attribute <code class="docutils literal notranslate"><span class="pre">salary_last_year</span></code>. Later, we decided that some employees
+earned sales commissions which were included in the number but it’s more useful to separate that
+into a new field <code class="docutils literal notranslate"><span class="pre">commisssion_last_year</span></code> with default 0 and make <code class="docutils literal notranslate"><span class="pre">salary</span></code> only the regular salary.<br />
+If we used the old version to pickle an employee with 50,000 regular salary and 20,000 commission, their
+<code class="docutils literal notranslate"><span class="pre">salary_last_year</span></code> would be 70K. On unpickling with the new version the instance would have
+<code class="docutils literal notranslate"><span class="pre">salary_last_year</span></code> of 70K and no commission, which would be wrong under the current code’s interpretation.
+These issues are common in e.g. data analytics &amp; machine learning uses, where complex models or
+arbitrary transformation pipelines may need to be stored as pickles after training but can give
+wrong numerical results - that aren’t immediately obvious - if the exact assumptions and representation of
+the model changes.</p>
+<p>In some scenarios there are good reasons to use a more robust serialization process, e.g. one specific
+to the type of data at hand, but sometimes pickle is the best feasible option and in that case
+versioned-pickle helps control the compatibility risks. It helps in both scenarios above,
+but especially avoids the costs of #2.</p>
+</section>
+</section>
+<section id="api-reference">
+<h1>API reference:<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h1>
+<p><a class="reference internal" href="API_reference.html"><span class="doc std std-doc">See a detailed description of the API here</span></a>.</p>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">versioned-pickle</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, a-reich.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
