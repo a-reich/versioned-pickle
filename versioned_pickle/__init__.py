@@ -1,15 +1,15 @@
 """Main module of versioned-pickle.
 
 The main API consists of these functions:
-dump
-dumps
-load
-loads
 
-These can be used as a nearly drop-in replacement for the corresponding functions from the stdlib pickle module.
+:meth:`dump`
+
+:meth:`load`
+
+These can be used as a nearly drop-in replacement for the corresponding functions from the stdlib ``pickle`` module.
 Only these are needed for normal use. Additional public objects
-(including EnvironmentMetadata and PackageMismatchWarning) are exposed only for potentially customizing the treatment
-of environment metadata or handling of mismatches.
+(including EnvironmentMetadata and PackageMismatchWarning) are exposed only for introspecting
+or potentially customizing the treatment of environment metadata and handling of mismatches.
 """
 
 from __future__ import annotations
@@ -47,28 +47,32 @@ class EnvironmentMetadata:
 
     Attributes
     ---------
-    packages: dict of distribution names to version strings
-    py_ver: 3-tuple of ints, the python interpreter version
-    package_scope: {"object", "loaded", "installed"},
+    packages:
+        dict of distribution names to version strings
+    py_ver:
+        the python interpreter version
+    package_scope: {"object", "loaded", "installed"}
         the type of scope that was used for which packages to include.
-
     """
 
     packages: dict[str, str]
     py_ver: tuple[int, int, int]
-    package_scope: str
+    package_scope: Literal["object", "loaded", "installed"]
 
     # TODO: add checks for valid field values? in a optional custom method or an auto-called __post_init__?
     @classmethod
     def from_scope(
-        cls, package_scope: str = "object", object_modules: Iterable[str] | None = None
+        cls,
+        package_scope: Literal["object", "loaded", "installed"] = "object",
+        object_modules: Iterable[str] | None = None,
     ) -> EnvironmentMetadata:
         """Construct an EnvironmentMetadata based on the type of scope for which packages to include.
 
         This is the typical way to construct instances, not calling the class name directly.
-        Params
+
+        Parameters
         -------
-        package_scope: str,
+        package_scope: {"object", "loaded", "installed"}
             can be "object" meaning the specific modules needed for an object, in which case module names
             must be specified in object_modules, or "loaded", or "installed".
         object_modules: optional Iterable[str],
@@ -96,7 +100,7 @@ class EnvironmentMetadata:
 
         return cls(packages=packages, py_ver=sys.version_info[:3], package_scope=package_scope)
 
-    def to_header_dict(self) -> dict[str, Any]:
+    def to_header_dict(self) -> dict[str, dict[str, Any]]:
         """Get a representation of the metadata as a Python-native dict.
 
         Used when one doesn't want to have import versioned_pickle itself, such as in the header created
@@ -199,10 +203,14 @@ class _IntrospectionPickler(pickle.Pickler):
         return NotImplemented
 
 
-def dump(obj: object, file: typ.IO[bytes], package_scope: str = "object") -> None:
+def dump(
+    obj: object,
+    file: typ.IO[bytes],
+    package_scope: Literal["object", "loaded", "installed"] = "object",
+) -> None:
     """Pickle an object's data to a file with environment metadata.
 
-    Params
+    Parameters
     ------
     obj: any object to pickle
     file: file-like obj (writable, binary mode)
@@ -233,10 +241,12 @@ def load(file: typ.IO[bytes], return_meta: bool = False) -> object:  # type: ign
     The saved EnvironmentMetadata from the environment that dumped the file is checked against the
     current EnvironmentMetadata. Extra packages in the load env are ignored as is python version.
     If they do not match, a PackageMismatchWarning is warned with details of the mismatches.
-    Params
+
+    Parameters
     ------
     file: file-like obj (readable, binary mode)
-    return_meta: optional bool, if True return a tuple of the object and its metadata
+    return_meta: optional bool
+        if True return a tuple of the object and its metadata
     """
     header_dict = pickle.load(file)
     pickled_meta = EnvironmentMetadata.from_header_dict(header_dict)
@@ -258,7 +268,7 @@ def load(file: typ.IO[bytes], return_meta: bool = False) -> object:  # type: ign
             raise validation from exc
 
 
-def dumps(obj: object, package_scope: str = "object") -> bytes:
+def dumps(obj: object, package_scope: Literal["object", "loaded", "installed"] = "object") -> bytes:
     """Like dump, but returns an in-memory bytes object instead of using a file."""
     f = io.BytesIO()
     dump(obj, f, package_scope=package_scope)
