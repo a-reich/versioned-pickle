@@ -16,3 +16,5 @@ The current steps for publishing docs are:
 4. Check the sphinx build worked and open locally in a browser to view.
 5. `mv build/html/* .` (GH pages renders the docs folder only.)
 6. Add and commit the docs folder to git, push to remote. Do not push the built output to other branches.
+
+In the future this could be automated in CI.

@@ -55,6 +55,15 @@ to include, in increasing order of strictness:
 * "installed" - all installed distributions.  
 
 (The Python version is also recorded but not used in validation by default).
+
+A unique feature of the tool which is less obvious and which users might not know how to implement for themselves
+is the "object" scope, which tells versioned-pickle to **introspect** the object and intelligently **determine**
+which packages need their versions recorded, based on which modules define the types encountered during pickling.
+This is handy if, for instance, you have a dictionary of pandas DataFrames you were working with and did
+some plotting of with matplotlib. You can pickle the dictionary for use later, and versioned-pickle
+will record the pandas version for validation
+but ignore matplotlib (which you don't really need just to load the object.)  
+
 Environment metadata is obtained using `importlib.metadata`. Modules that are loaded directly
 from sys.path without being installed as part of a distribution, or functions/classes
 only defined in __main__, are ignored (it's assumed that if you're using this package you already
