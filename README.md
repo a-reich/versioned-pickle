@@ -1,6 +1,8 @@
 # versioned-pickle
 A small utility Python package for adding environment metadata to pickle files and warning on mismatch when loaded.
 
+Rendered documentation including full reference is available at the [Github Pages site](https://a-reich.github.io/versioned-pickle/). The repository is [here](https://github.com/a-reich/versioned-pickle).
+
 # What does this do for me? 
 `versioned-pickle` records metadata about the Python environment when used to pickle an object,
 checks the new environment when unpickling, compares the two and warns if they are not considered to match.
@@ -25,7 +27,7 @@ pip install git+https://github.com/a-reich/versioned-pickle.git
 ```  
 To install a specific built wheel from GH:  
 ```
-pip install versioned-pickle@https://github.com/a-reich/versioned-pickle/releases/download/v0.3.2/versioned_pickle-0.3.2-py3-none-any.whl
+pip install versioned-pickle@https://github.com/a-reich/versioned-pickle/releases/download/v0.3.3/versioned_pickle-0.3.2-py3-none-any.whl
 ```  
 Python versions >=3.8 are supported.
 # Usage
