@@ -1,10 +1,5 @@
-# version-pickle documentation
-
-Readme file should go here.
-
-Link to module API reference would go here.
-
-```{eval-rst}
-.. automodule:: versioned_pickle
-    :members: EnvironmentMetadata, dump, load
+```{include} ../../README.md
 ```
+
+# API reference:
+[See a detailed description of the API here](API_reference.md).
